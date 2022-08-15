@@ -62,6 +62,11 @@ const siteState: Site = {
     password: '',
     privateKey: '',
     remotePath: '',
+    proxyPath: '',
+    proxyPort: '',
+    enabledProxy: 'direct',
+    netlifySiteId: '',
+    netlifyAccessToken: '',
   },
   commentSetting: {
     showComment: false,

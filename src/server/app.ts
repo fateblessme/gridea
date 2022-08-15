@@ -31,12 +31,15 @@ export default class App {
 
   db: IApplicationDb
 
+  buildDir: string
+
   constructor(setting: IApplicationSetting) {
     this.mainWindow = setting.mainWindow
     this.app = setting.app
     this.baseDir = setting.baseDir
     this.appDir = path.join(this.app.getPath('documents'), 'gridea')
     this.previewServer = setting.previewServer
+    this.buildDir = path.join(this.app.getPath('home'), '.gridea', 'output')
 
     this.db = {
       posts: [],
@@ -78,6 +81,11 @@ export default class App {
         password: '',
         privateKey: '',
         remotePath: '',
+        proxyPath: '',
+        proxyPort: '',
+        enabledProxy: 'direct',
+        netlifySiteId: '',
+        netlifyAccessToken: '',
       },
       commentSetting: {
         showComment: false,
@@ -199,13 +207,18 @@ export default class App {
         fse.writeFileSync(appConfigPath, jsonString)
       }
 
+      const buildDir = path.join(appConfigFolder, 'output')
+      if (!fse.pathExistsSync(buildDir)) {
+        fse.mkdirSync(buildDir)
+      }
+
       const appConfig = fse.readJsonSync(appConfigPath)
       this.appDir = appConfig.sourceFolder
 
       // Site folder exists
       if (fse.pathExistsSync(this.appDir)) {
         // Check if the `images`, `config`, 'output', `post-images`, 'posts', 'themes', 'static' folder exists, if it does not exist, copy it from default-files
-        ['images', 'config', 'output', 'post-images', 'posts', 'themes', 'static'].forEach((folder: string) => {
+        ['images', 'config', 'post-images', 'posts', 'themes', 'static'].forEach((folder: string) => {
           const folderPath = path.join(this.appDir, folder)
           if (!fse.pathExistsSync(folderPath)) {
             fse.copySync(
@@ -222,7 +235,7 @@ export default class App {
         this.checkTheme('paper')
 
         // move output/favicon.ico to Gridea/favicon.ico
-        const outputFavicon = path.join(this.appDir, 'output', 'favicon.ico')
+        const outputFavicon = path.join(this.buildDir, 'favicon.ico')
         const sourceFavicon = path.join(this.appDir, 'favicon.ico')
         const existFaviconOutput = fse.pathExistsSync(outputFavicon)
         const existFaviconSource = fse.pathExistsSync(sourceFavicon)
@@ -275,8 +288,8 @@ export default class App {
       const routesStack = routers.stack
       routesStack.forEach(removeMiddleware)
     }
-    this.previewServer.use(express.static(`${this.appDir}/output`))
-    console.log(`Preview server: Static dir change to ${this.appDir}/output`)
+    this.previewServer.use(express.static(`${this.buildDir}`))
+    console.log(`Preview server: Static dir change to ${this.buildDir}`)
   }
 
   private initEvents(): void {
